@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { Eye, EyeOff } from 'lucide-react';
 import { RegisterFormData } from '../types/auth.types';
 import { useRegister } from '../hooks/useRegister';
-import { validateForm, ValidationErrors } from '../utils/authValidation';
+import { validateForm } from '../utils/authValidation';
 import {
     CLASS_SECTION_HEADING,
     CLASS_GRID_TWO_COL,
@@ -15,63 +16,16 @@ import {
 import { cn } from '@/lib/utils';
 
 const RegisterForm: React.FC = () => {
-    const { register, loading, error } = useRegister();
+    const { register: registerUser, loading, error } = useRegister();
 
-    const [formData, setFormData] = useState<RegisterFormData>({
-        fullName: '',
-        phone: '',
-        email: '',
-        website: '',
-        password: '',
-        confirmPassword: '',
-        subscribeEmail: false,
-    });
-
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [errors, setErrors] = useState<ValidationErrors>({});
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value, type, checked } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value,
-        }));
-        setErrors((prev) => ({ ...prev, [name]: '' }));
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        // Validation
-        const validationErrors = await validateForm(formData);
-        setErrors(validationErrors);
-        if (Object.keys(validationErrors).length > 0) {
-            return;
-        }
-
-        try {
-            await register({
-                fullName: formData.fullName,
-                phone: formData.phone,
-                email: formData.email,
-                password: formData.password,
-                website: formData.website,
-                subscribeEmail: formData.subscribeEmail,
-            });
-
-            alert('Đăng ký thành công!');
-        } catch (err) {
-            console.error('Registration failed', {
-                error: err,
-                message: err instanceof Error ? err.message : 'Unknown error',
-                userEmail: formData.email
-            });
-        }
-    };
-
-    const handleReset = () => {
-        setFormData({
+    const {
+        register,
+        handleSubmit,
+        setError,
+        formState: { errors },
+        reset
+    } = useForm<RegisterFormData>({
+        defaultValues: {
             fullName: '',
             phone: '',
             email: '',
@@ -79,13 +33,52 @@ const RegisterForm: React.FC = () => {
             password: '',
             confirmPassword: '',
             subscribeEmail: false,
-        });
-        setErrors({});
+        }
+    });
+
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+    const onSubmit = async (data: RegisterFormData) => {
+        // Validation
+        const validationErrors = await validateForm(data);
+        const hasErrors = Object.keys(validationErrors).length > 0;
+        if (hasErrors) {
+            Object.entries(validationErrors).forEach(([field, message]) => {
+                setError(field as keyof RegisterFormData, { message });
+            });
+            return;
+        }
+
+        try {
+            await registerUser({
+                fullName: data.fullName,
+                phone: data.phone,
+                email: data.email,
+                password: data.password,
+                website: data.website,
+                subscribeEmail: data.subscribeEmail,
+            });
+
+            setSuccessMessage('Đăng ký thành công!');
+        } catch (err) {
+            console.error('Registration failed', {
+                error: err,
+                message: err instanceof Error ? err.message : 'Unknown error',
+                userEmail: data.email
+            });
+        }
+    };
+
+    const handleReset = () => {
+        reset();
+        setSuccessMessage(null);
     };
 
     return (
         <div className="max-w-4xl mx-auto">
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit(onSubmit)}>
                 {/* THÔNG TIN CÁ NHÂN */}
                 <div className="mb-8">
                     <h2 className={CLASS_SECTION_HEADING}>
@@ -99,12 +92,10 @@ const RegisterForm: React.FC = () => {
                             </label>
                             <input
                                 type="text"
-                                name="fullName"
-                                value={formData.fullName}
-                                onChange={handleChange}
+                                {...register('fullName')}
                                 className={cn(CLASS_INPUT_BASE, errors.fullName && 'border-red-500 focus:border-red-500')}
                             />
-                            {errors.fullName && <div className={CLASS_ERROR}>{errors.fullName}</div>}
+                            {errors.fullName?.message && <div className={CLASS_ERROR}>{errors.fullName.message}</div>}
                         </div>
 
                         <div>
@@ -113,12 +104,10 @@ const RegisterForm: React.FC = () => {
                             </label>
                             <input
                                 type="text"
-                                name="phone"
-                                value={formData.phone}
-                                onChange={handleChange}
+                                {...register('phone')}
                                 className={cn(CLASS_INPUT_BASE, errors.phone && 'border-red-500 focus:border-red-500')}
                             />
-                            {errors.phone && <div className={CLASS_ERROR}>{errors.phone}</div>}
+                            {errors.phone?.message && <div className={CLASS_ERROR}>{errors.phone.message}</div>}
                         </div>
 
                         <div>
@@ -127,12 +116,10 @@ const RegisterForm: React.FC = () => {
                             </label>
                             <input
                                 type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
+                                {...register('email')}
                                 className={cn(CLASS_INPUT_BASE, errors.email && 'border-red-500 focus:border-red-500')}
                             />
-                            {errors.email && <div className={CLASS_ERROR}>{errors.email}</div>}
+                            {errors.email?.message && <div className={CLASS_ERROR}>{errors.email.message}</div>}
                         </div>
 
                         <div>
@@ -141,12 +128,10 @@ const RegisterForm: React.FC = () => {
                             </label>
                             <input
                                 type="text"
-                                name="website"
-                                value={formData.website}
-                                onChange={handleChange}
+                                {...register('website')}
                                 className={cn(CLASS_INPUT_BASE, errors.website && 'border-red-500 focus:border-red-500')}
                             />
-                            {errors.website && <div className={CLASS_ERROR}>{errors.website}</div>}
+                            {errors.website?.message && <div className={CLASS_ERROR}>{errors.website.message}</div>}
                         </div>
                     </div>
 
@@ -154,9 +139,7 @@ const RegisterForm: React.FC = () => {
                         <label className="flex items-center cursor-pointer">
                             <input
                                 type="checkbox"
-                                name="subscribeEmail"
-                                checked={formData.subscribeEmail}
-                                onChange={handleChange}
+                                {...register('subscribeEmail')}
                                 className="w-4 h-4 text-green-primary border-gray-300 rounded focus:ring-green-dark"
                             />
                             <span className="ml-2 text-sm text-gray-700">
@@ -180,10 +163,8 @@ const RegisterForm: React.FC = () => {
                             <div className="relative">
                                 <input
                                     type={showPassword ? 'text' : 'password'}
-                                    name="password"
-                                    value={formData.password}
+                                    {...register('password')}
                                     tabIndex={1}
-                                    onChange={handleChange}
                                     className={cn(CLASS_PASSWORD_INPUT, errors.password && 'border-red-500 focus:border-red-500')}
                                 />
                                 <button
@@ -195,7 +176,7 @@ const RegisterForm: React.FC = () => {
                                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
                             </div>
-                            {errors.password && <div className={CLASS_ERROR}>{errors.password}</div>}
+                            {errors.password?.message && <div className={CLASS_ERROR}>{errors.password.message}</div>}
                         </div>
 
                         <div>
@@ -205,10 +186,8 @@ const RegisterForm: React.FC = () => {
                             <div className="relative">
                                 <input
                                     type={showConfirmPassword ? 'text' : 'password'}
-                                    name="confirmPassword"
-                                    value={formData.confirmPassword}
+                                    {...register('confirmPassword')}
                                     tabIndex={2}
-                                    onChange={handleChange}
                                     className={cn(CLASS_PASSWORD_INPUT, errors.confirmPassword && 'border-red-500 focus:border-red-500')}
                                 />
                                 <button
@@ -220,7 +199,7 @@ const RegisterForm: React.FC = () => {
                                     {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
                             </div>
-                            {errors.confirmPassword && <div className={CLASS_ERROR}>{errors.confirmPassword}</div>}
+                            {errors.confirmPassword?.message && <div className={CLASS_ERROR}>{errors.confirmPassword.message}</div>}
                         </div>
                     </div>
                 </div>
@@ -229,6 +208,13 @@ const RegisterForm: React.FC = () => {
                 {error && (
                     <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
                         {error}
+                    </div>
+                )}
+
+                {/* Success message */}
+                {successMessage && (
+                    <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
+                        {successMessage}
                     </div>
                 )}
 
