@@ -15,14 +15,16 @@ export const useRegister = () => {
       const registeredUser = await registerUser(data);
       return registeredUser;
     } catch (err) {
-      setError(err instanceof Error ? err.message : MESSAGE_REGISTER_FAILED);
-      throw new Error(
-        err instanceof Error ? err.message : MESSAGE_REGISTER_FAILED
-      );
+      const errorMessage =
+        err instanceof Error ? err.message : MESSAGE_REGISTER_FAILED;
+      setError(errorMessage);
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  return { register, loading, error };
+  const clearError = () => setError(null);
+
+  return { register, loading, error, clearError };
 };
