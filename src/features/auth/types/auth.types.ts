@@ -24,12 +24,39 @@ export interface RegisterRequest {
   subscribeEmail?: boolean;
 }
 
+export class RegistrationError extends Error {
+  constructor(message: string, public originalError?: Error) {
+    super(message);
+    this.name = "RegistrationError";
+  }
+}
+
+export class ActivationError extends Error {
+  constructor(message: string, public originalError?: Error) {
+    super(message);
+    this.name = "ActivationError";
+  }
+}
+
+export class EmailError extends Error {
+  constructor(message: string, public originalError?: Error | unknown) {
+    super(message);
+    this.name = "EmailError";
+  }
+}
 /**
- * Data structure representing a registered user.
+ * Data structure for the user object.
  */
+
 export interface User {
   id: string;
   fullName: string;
   phone: string;
   email: string;
+  emailVerified: boolean;
+  activationToken?: string;
+  website?: string;
+  subscribeEmail?: boolean;
+  createdAt: string;
+  activatedAt?: string;
 }

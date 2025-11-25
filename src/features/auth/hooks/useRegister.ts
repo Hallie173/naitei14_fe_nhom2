@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { registerUser } from "../services/authAPI";
-import { RegisterRequest } from "../types/auth.types";
+import { RegisterRequest, RegistrationError } from "../types/auth.types";
 import { MESSAGE_REGISTER_FAILED } from "@/constants/common";
 
 export const useRegister = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const register = async (data: RegisterRequest) => {
+  const createUser = async (data: RegisterRequest) => {
     setLoading(true);
     setError(null);
 
@@ -18,13 +18,19 @@ export const useRegister = () => {
       const errorMessage =
         err instanceof Error ? err.message : MESSAGE_REGISTER_FAILED;
       setError(errorMessage);
-      console.error(err);
+      console.error("Registration error occurred", {
+        message: errorMessage,
+        error: err,
+      });
+      throw new RegistrationError(
+        errorMessage,
+        err instanceof Error ? err : undefined
+      );
     } finally {
       setLoading(false);
     }
   };
-
   const clearError = () => setError(null);
 
-  return { register, loading, error, clearError };
+  return { createUser, loading, error, clearError };
 };
