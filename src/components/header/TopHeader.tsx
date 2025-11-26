@@ -29,7 +29,11 @@ export const RenderTopHeader = () => {
             <span className={CLASS_DISABLED} title={MESSAGE_DEVELOPING}>
               Đăng nhập
             </span>
+<<<<<<< HEAD
             <Link to="/register">
+=======
+            <Link to="auth/register">
+>>>>>>> ac953ef (feat(auth): add email verification for account activation)
               Đăng ký
             </Link>
           </div>

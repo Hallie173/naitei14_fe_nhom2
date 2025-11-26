@@ -19,13 +19,17 @@
       "subscribeEmail": false
     },
     {
-      "id": "29804081-4511-4643-b193-4ad45856c97f",
-      "fullName": "Trần Văn A",
-      "phone": "09082151825",
-      "email": "tranvana131@gmail.com",
-      "password": "Hoc12345",
+      "id": "8124b991-ef3a-454e-aa37-667024080145",
+      "fullName": "Đỗ Quân",
+      "phone": "0779562271",
+      "email": "haudreywilliam13@gmail.com",
+      "password": "Hoc123456",
       "website": "",
-      "subscribeEmail": false
+      "subscribeEmail": false,
+      "emailVerified": true,
+      "activationToken": null,
+      "createdAt": "2025-11-21T03:20:58.439Z",
+      "activatedAt": "2025-11-21T03:21:14.829Z"
     }
   ]
 }

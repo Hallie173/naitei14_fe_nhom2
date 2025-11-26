@@ -4,6 +4,7 @@ import { LuEye, LuEyeOff } from "react-icons/lu";
 import { RegisterFormData } from "../types/auth.types";
 import { useRegister } from "../hooks/useRegister";
 import { validateForm } from "../utils/authValidation";
+import { sendActivationEmail } from "../services/emailService";
 import {
   CLASS_SECTION_HEADING,
   CLASS_GRID_TWO_COL,
@@ -28,7 +29,7 @@ const customResolver = async (values: RegisterFormData) => {
 };
 
 const RegisterForm: React.FC = () => {
-  const { register: registerUser, loading, error, clearError } = useRegister();
+  const { createUser, loading, error, clearError } = useRegister();
 
   const {
     register,
@@ -54,7 +55,7 @@ const RegisterForm: React.FC = () => {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      await registerUser({
+      const registeredUser = await createUser({
         fullName: data.fullName,
         phone: data.phone,
         email: data.email,
@@ -63,7 +64,35 @@ const RegisterForm: React.FC = () => {
         subscribeEmail: data.subscribeEmail,
       });
 
-      setSuccessMessage("Đăng ký thành công!");
+      const activationLink = `${window.location.origin}/auth/activate?userId=${registeredUser.id}&token=${registeredUser.activationToken}`;
+      try {
+        const sanitizedEmail = data.email
+          .replace(/[\r\n]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        const sanitizedName = data.fullName
+          .replace(/[\r\n]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        await sendActivationEmail(
+          sanitizedEmail,
+          sanitizedName,
+          activationLink
+        );
+        setSuccessMessage(
+          "Đăng ký thành công! Email xác nhận đã được gửi đến hộp thư của bạn."
+        );
+      } catch (emailErr) {
+        const emailErrorMessage =
+          emailErr instanceof Error ? emailErr.message : "Unknown email error";
+        console.error("Email send failed", {
+          error: emailErr,
+          message: emailErrorMessage,
+        });
+        setSuccessMessage(
+          `Không thể gửi email xác nhận. Vui lòng liên hệ hỗ trợ. Dữ liệu: ${emailErrorMessage}`
+        );
+      }
     } catch (err) {
       console.error("Registration failed", {
         error: err,
