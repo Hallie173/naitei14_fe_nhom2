@@ -4,6 +4,7 @@ import { LuEye, LuEyeOff } from "react-icons/lu";
 import { RegisterFormData } from "../types/auth.types";
 import { useRegister } from "../hooks/useRegister";
 import { validateForm } from "../utils/authValidation";
+import { sendActivationEmail } from "../services/emailService";
 import {
   CLASS_SECTION_HEADING,
   CLASS_GRID_TWO_COL,
@@ -14,7 +15,6 @@ import {
   CLASS_ERROR,
 } from "@/constants/common";
 import { cn } from "@/lib/utils";
-import { Alert, StatusAlert } from "@/components/ui";
 
 const customResolver = async (values: RegisterFormData) => {
   const errors: FieldErrors<RegisterFormData> = {};
@@ -29,7 +29,7 @@ const customResolver = async (values: RegisterFormData) => {
 };
 
 const RegisterForm: React.FC = () => {
-  const { createUser, loading, error, successMessage, clearError, clearSuccessMessage } = useRegister();
+  const { createUser, loading, error, clearError } = useRegister();
 
   const {
     register,
@@ -51,22 +51,60 @@ const RegisterForm: React.FC = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const onSubmit = async (data: RegisterFormData) => {
-    await createUser({
-      fullName: data.fullName,
-      phone: data.phone,
-      email: data.email,
-      password: data.password,
-      website: data.website,
-      subscribeEmail: data.subscribeEmail,
-    });
+    try {
+      const registeredUser = await createUser({
+        fullName: data.fullName,
+        phone: data.phone,
+        email: data.email,
+        password: data.password,
+        website: data.website,
+        subscribeEmail: data.subscribeEmail,
+      });
+
+      const activationLink = `${window.location.origin}/auth/activate?userId=${registeredUser.id}&token=${registeredUser.activationToken}`;
+      try {
+        const sanitizedEmail = data.email
+          .replace(/[\r\n]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        const sanitizedName = data.fullName
+          .replace(/[\r\n]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        await sendActivationEmail(
+          sanitizedEmail,
+          sanitizedName,
+          activationLink
+        );
+        setSuccessMessage(
+          "Đăng ký thành công! Email xác nhận đã được gửi đến hộp thư của bạn."
+        );
+      } catch (emailErr) {
+        const emailErrorMessage =
+          emailErr instanceof Error ? emailErr.message : "Unknown email error";
+        console.error("Email send failed", {
+          error: emailErr,
+          message: emailErrorMessage,
+        });
+        setSuccessMessage(
+          `Không thể gửi email xác nhận. Vui lòng liên hệ hỗ trợ. Dữ liệu: ${emailErrorMessage}`
+        );
+      }
+    } catch (err) {
+      console.error("Registration failed", {
+        error: err,
+        message: err instanceof Error ? err.message : "Unknown error",
+      });
+    }
   };
 
   const handleReset = () => {
     reset();
+    setSuccessMessage(null);
     clearError();
-    clearSuccessMessage();
   };
 
   return (
@@ -232,16 +270,16 @@ const RegisterForm: React.FC = () => {
 
         {/* Error message */}
         {error && (
-          <Alert type="error" message={error} className="mb-4" />
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+            {error}
+          </div>
         )}
 
         {/* Success message */}
         {successMessage && (
-          <StatusAlert
-            type="success"
-            message={successMessage}
-            className="mb-4"
-          />
+          <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
+            {successMessage}
+          </div>
         )}
 
         {/* Buttons */}
