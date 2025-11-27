@@ -12,16 +12,8 @@ export interface RegisterFormData {
 }
 
 /**
- * Data structure for the login form inputs.
- */
-export interface LoginFormData {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-}
-
-/**
- * Data structure for the registration request.
+ * Data structure for the registration API request.
+ * Note: website and subscribeEmail are optional fields.
  */
 export interface RegisterRequest {
   fullName: string;
@@ -46,16 +38,25 @@ export class ActivationError extends Error {
   }
 }
 
-export class LoginError extends Error {
-  constructor(message: string, public originalError?: Error) {
-    super(message);
-    this.name = "LoginError";
-  }
-}
-
 export class EmailError extends Error {
   constructor(message: string, public originalError?: Error | unknown) {
     super(message);
     this.name = "EmailError";
   }
+}
+/**
+ * Data structure for the user object.
+ */
+
+export interface User {
+  id: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  emailVerified: boolean;
+  activationToken?: string;
+  website?: string;
+  subscribeEmail?: boolean;
+  createdAt: string;
+  activatedAt?: string;
 }
